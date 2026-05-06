@@ -85,11 +85,5 @@ func (r *resolver) lookUp(hostName string) (net.IP, error) {
 		return r.parent.lookUp(hostName)
 	}
 
-	return nil, &net.DNSError{
-		Err:         "host not found",
-		Name:        hostName,
-		Server:      "vnet resolver",
-		IsTimeout:   false,
-		IsTemporary: false,
-	}
+	return nil, errHostNotFound(hostName)
 }
