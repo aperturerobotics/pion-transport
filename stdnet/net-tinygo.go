@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 The Pion community <https://pion.ly>
 // SPDX-License-Identifier: MIT
 
-//go:build !tinygo
+//go:build tinygo
 
 // Package stdnet implements the transport.Net interface
 // using methods from Go's standard net package.
@@ -33,9 +33,6 @@ func NewNet() (*Net, error) {
 	return n, n.UpdateInterfaces()
 }
 
-// Compile-time assertion.
-var _ transport.Net = &Net{}
-
 // UpdateInterfaces updates the internal list of network interfaces
 // and associated addresses.
 func (n *Net) UpdateInterfaces() error {
@@ -49,10 +46,6 @@ func (n *Net) Interfaces() ([]*transport.Interface, error) {
 }
 
 // InterfaceByIndex returns the interface specified by index.
-//
-// On Solaris, it returns one of the logical network interfaces
-// sharing the logical data link; for more precision use
-// InterfaceByName.
 func (n *Net) InterfaceByIndex(index int) (*transport.Interface, error) {
 	for _, ifc := range n.interfaces {
 		if ifc.Index == index {
@@ -76,22 +69,22 @@ func (n *Net) InterfaceByName(name string) (*transport.Interface, error) {
 
 // ListenPacket announces on the local network address.
 func (n *Net) ListenPacket(network string, address string) (net.PacketConn, error) {
-	return net.ListenPacket(network, address) //nolint: noctx
+	return nil, transport.ErrNotSupported
 }
 
 // ListenUDP acts like ListenPacket for UDP networks.
 func (n *Net) ListenUDP(network string, locAddr *net.UDPAddr) (transport.UDPConn, error) {
-	return net.ListenUDP(network, locAddr)
+	return nil, transport.ErrNotSupported
 }
 
 // Dial connects to the address on the named network.
 func (n *Net) Dial(network, address string) (net.Conn, error) {
-	return net.Dial(network, address) //nolint: noctx
+	return nil, transport.ErrNotSupported
 }
 
 // DialUDP acts like Dial for UDP networks.
 func (n *Net) DialUDP(network string, laddr, raddr *net.UDPAddr) (transport.UDPConn, error) {
-	return net.DialUDP(network, laddr, raddr)
+	return nil, transport.ErrNotSupported
 }
 
 // ResolveIPAddr returns an address of IP end point.
@@ -111,53 +104,39 @@ func (n *Net) ResolveTCPAddr(network, address string) (*net.TCPAddr, error) {
 
 // DialTCP acts like Dial for TCP networks.
 func (n *Net) DialTCP(network string, laddr, raddr *net.TCPAddr) (transport.TCPConn, error) {
-	return net.DialTCP(network, laddr, raddr)
+	return nil, transport.ErrNotSupported
 }
 
 // ListenTCP acts like Listen for TCP networks.
 func (n *Net) ListenTCP(network string, laddr *net.TCPAddr) (transport.TCPListener, error) {
-	l, err := net.ListenTCP(network, laddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return tcpListener{l}, nil
+	return nil, transport.ErrNotSupported
 }
 
-type tcpListener struct {
-	*net.TCPListener
-}
-
-func (l tcpListener) AcceptTCP() (transport.TCPConn, error) {
-	return l.TCPListener.AcceptTCP()
-}
-
-type stdDialer struct {
-	*net.Dialer
-}
+type stdDialer struct{}
 
 func (d stdDialer) Dial(network, address string) (net.Conn, error) {
-	return d.Dialer.Dial(network, address)
+	return nil, transport.ErrNotSupported
 }
 
 // CreateDialer creates an instance of vnet.Dialer.
 func (n *Net) CreateDialer(d *net.Dialer) transport.Dialer {
-	return stdDialer{d}
+	return stdDialer{}
 }
 
-type stdListenConfig struct {
-	*net.ListenConfig
-}
+type stdListenConfig struct{}
 
 func (d stdListenConfig) Listen(ctx context.Context, network, address string) (net.Listener, error) {
-	return d.ListenConfig.Listen(ctx, network, address)
+	return nil, transport.ErrNotSupported
 }
 
 func (d stdListenConfig) ListenPacket(ctx context.Context, network, address string) (net.PacketConn, error) {
-	return d.ListenConfig.ListenPacket(ctx, network, address)
+	return nil, transport.ErrNotSupported
 }
 
 // CreateListenConfig creates an instance of vnet.ListenConfig.
 func (n *Net) CreateListenConfig(d *net.ListenConfig) transport.ListenConfig {
-	return stdListenConfig{d}
+	return stdListenConfig{}
 }
+
+// Compile-time assertion.
+var _ transport.Net = &Net{}
